@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>赛事数据榜单系统 - GitHub托管</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #4361ee;
+            --secondary: #3f37c9;
+            --success: #4cc9f0;
+            --dark: #212529;
+            --light: #f8f9fa;
+            --danger: #f72585;
+            --warning: #ff9e00;
+            --info: #4895ef;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #0f172a, #1e293b);
+            color: var(--light);
+            min-height: 100vh;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            padding: 30px 0;
+            margin-bottom: 30px;
+            position: relative;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--success);
+            margin-bottom: 15px;
+        }
+        
+        h1 {
+            font-size: 2.8rem;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, var(--success), var(--primary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            color: #94a3b8;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .tabs {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+            border-bottom: 1px solid #334155;
+            padding-bottom: 10px;
+        }
+        
+        .tab-btn {
+            background: none;
+            border: none;
+            color: #94a3b8;
+            font-size: 1.1rem;
+            padding: 12px 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            border-radius: 8px 8px 0 0;
+        }
+        
+        .tab-btn.active {
+            color: var(--light);
+            background: rgba(76, 201, 240, 0.1);
+        }
+        
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: var(--success);
+        }
+        
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .card {
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        
+        .card-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            color: var(--success);
+        }
+        
+        .search-container {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        
+        input {
+            flex: 1;
+            padding: 14px 20px;
+            border: none;
+            border-radius: 12px;
+            background: rgba(30, 41, 59, 0.7);
+            color: var(--light);
+            font-size: 1rem;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.2);
+        }
+        
+        input::placeholder {
+            color: #64748b;
+        }
+        
+        input:focus {
+            outline: 2px solid var(--primary);
+        }
+        
+        button {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            border: none;
+            padding: 14px 30px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(67, 97, 238, 0.3);
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(67, 97, 238, 0.4);
+        }
+        
+        button:active {
+            transform: translateY(1px);
+        }
+        
+        .player-detail {
+            background: rgba(30, 41, 59, 0.8);
+            border-radius: 12px;
+            padding: 25px;
+            margin-top: 20px;
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        .player-header {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+        
+        .player-avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--info));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: white;
+        }
+        
+        .player-info h2 {
+            font-size: 1.8rem;
+            margin-bottom: 5px;
+        }
+        
+        .player-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .stat-card {
+            background: rgba(15, 23, 42, 0.7);
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--success);
+            margin: 10px 0;
+        }
+        
+        .stat-label {
+            color: #94a3b8;
+            font-size: 0.9rem;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        th {
+            background: rgba(67, 97, 238, 0.2);
+            padding: 15px;
+            text-align: left;
+            color: var(--success);
+            font-weight: 600;
+        }
+        
+        td {
+            padding: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        tr:hover {
+            background: rgba(67, 97, 238, 0.1);
+        }
+        
+        .medal {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 24px;
+            font-size: 0.8rem;
+            margin-right: 10px;
+        }
+        
+        .gold {
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            color: #000;
+        }
+        
+        .silver {
+            background: linear-gradient(135deg, #C0C0C0, #A9A9A9);
+            color: #000;
+        }
+        
+        .bronze {
+            background: linear-gradient(135deg, #CD7F32, #8B4513);
+            color: #fff;
+        }
+        
+        .team-logo {
+            width: 40px;
+            height: 40px;
+            background: var(--info);
+            border-radius: 8px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 30px 0;
+            color: #64748b;
+            margin-top: 40px;
+            border-top: 1px solid #334155;
+        }
+        
+        .notion-badge {
+            background: rgba(255,255,255,0.1);
+            padding: 5px 15px;
+            border-radius: 20px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+            margin-top: 10px;
+        }
+        
+        .loader {
+            display: none;
+            text-align: center;
+            padding: 30px;
+        }
+        
+        .loader-spinner {
+            border: 4px solid rgba(255,255,255,0.1);
+            border-top: 4px solid var(--success);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .api-config {
+            background: rgba(30, 41, 59, 0.8);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        .api-config h3 {
+            color: var(--success);
+            margin-bottom: 15px;
+        }
+        
+        .config-inputs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        
+        .config-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .config-group label {
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            color: #94a3b8;
+        }
+        
+        .save-config {
+            margin-top: 15px;
+            background: var(--warning);
+        }
+        
+        @media (max-width: 768px) {
+            .search-container {
+                flex-direction: column;
+            }
+            
+            .player-header {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .player-stats {
+                grid-template-columns: 1fr;
+            }
+            
+            .config-inputs {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <i class="fas fa-trophy"></i>
+                <span>赛事数据榜单系统</span>
+            </div>
+            <h1>GitHub托管版</h1>
+            <p class="subtitle">连接Notion数据库，展示选手数据和队伍排名</p>
+        </header>
+        
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="player">选手查询</button>
+            <button class="tab-btn" data-tab="team">队伍排名</button>
+            <button class="tab-btn" data-tab="config">API配置</button>
+        </div>
+        
+        <!-- 选手查询面板 -->
+        <div class="tab-content active" id="player-tab">
+            <div class="card">
+                <div class="card-title">
+                    <i class="fas fa-user"></i>
+                    <h2>选手数据查询</h2>
+                </div>
+                
+                <p>请输入选手ID查询详细赛事数据：</p>
+                
+                <div class="search-container">
+                    <input type="text" id="player-id" placeholder="输入选手ID (例如: PLR-001)">
+                    <button id="search-player">
+                        <i class="fas fa-search"></i> 查询选手
+                    </button>
+                </div>
+                
+                <div class="loader" id="player-loader">
+                    <div class="loader-spinner"></div>
+                    <p>正在查询选手数据...</p>
+                </div>
+                
+                <div class="player-detail" id="player-detail">
+                    <div class="player-header">
+                        <div class="player-avatar" id="player-avatar">ID</div>
+                        <div class="player-info">
+                            <h2 id="player-name">选手姓名</h2>
+                            <p>选手ID: <strong id="player-id-display">PLR-000</strong></p>
+                            <p>所属队伍: <strong id="player-team">队伍名称</strong></p>
+                        </div>
+                    </div>
+                    
+                    <div class="player-stats">
+                        <div class="stat-card">
+                            <div class="stat-value" id="total-score">0</div>
+                            <div class="stat-label">总得分</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="matches-played">0</div>
+                            <div class="stat-label">参赛场次</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="win-rate">0%</div>
+                            <div class="stat-label">胜率</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="avg-score">0.0</div>
+                            <div class="stat-label">场均得分</div>
+                        </div>
+                    </div>
+                    
+                    <h3 style="margin: 25px 0 15px;">近期表现</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>赛事</th>
+                                <th>得分</th>
+                                <th>排名</th>
+                                <th>日期</th>
+                            </tr>
+                        </thead>
+                        <tbody id="performance-data">
+                            <!-- 动态填充 -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 队伍排名面板 -->
+        <div class="tab-content" id="team-tab">
+            <div class="card">
+                <div class="card-title">
+                    <i class="fas fa-users"></i>
+                    <h2>队伍总排名</h2>
+                </div>
+                
+                <p>队伍综合排名数据：</p>
+                
+                <div class="loader" id="team-loader">
+                    <div class="loader-spinner"></div>
+                    <p>正在加载队伍排名...</p>
+                </div>
+                
+                <table id="team-ranking">
+                    <thead>
+                        <tr>
+                            <th width="60px">排名</th>
+                            <th>队伍</th>
+                            <th>总得分</th>
+                            <th>参赛次数</th>
+                            <th>平均得分</th>
+                            <th>胜率</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- 动态填充 -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- API配置面板 -->
+        <div class="tab-content" id="config-tab">
+            <div class="card">
+                <div class="card-title">
+                    <i class="fas fa-cog"></i>
+                    <h2>API配置</h2>
+                </div>
+                
+                <div class="api-config">
+                    <h3>Notion API配置</h3>
+                    <p>请配置您的Notion API信息以连接数据库：</p>
+                    
+                    <div class="config-inputs">
+                        <div class="config-group">
+                            <label for="api-key">Notion API密钥</label>
+                            <input type="password" id="api-key" placeholder="输入secret_...">
+                        </div>
+                        
+                        <div class="config-group">
+                            <label for="database-id">数据库ID</label>
+                            <input type="text" id="database-id" placeholder="输入数据库ID">
+                        </div>
+                    </div>
+                    
+                    <button class="save-config" id="save-config">
+                        <i class="fas fa-save"></i> 保存配置
+                    </button>
+                    
+                    <div class="config-info" style="margin-top: 20px; background: rgba(15,23,42,0.5); padding: 15px; border-radius: 8px;">
+                        <h4>配置说明：</h4>
+                        <p>1. 在Notion中创建数据库并添加集成</p>
+                        <p>2. 获取API密钥和数据库ID</p>
+                        <p>3. 保存配置后刷新页面</p>
+                        <p>4. 配置信息将存储在浏览器本地</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>数据来源: Notion数据库 | GitHub托管 | © 2023 赛事数据榜单系统</p>
+            <div class="notion-badge">
+                <i class="fas fa-database"></i>
+                <span>Powered by Notion API</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 切换标签页功能
+        document.querySelectorAll('.tab-btn').forEach(button => {
+            button.addEventListener('click', () => {
+                // 移除所有活动状态
+                document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+                
+                // 添加当前活动状态
+                button.classList.add('active');
+                document.getElementById(`${button.dataset.tab}-tab`).classList.add('active');
+                
+                // 如果是队伍标签且未加载过数据，则加载队伍数据
+                if (button.dataset.tab === 'team' && !document.querySelector('#team-ranking tbody').innerHTML) {
+                    loadTeamRanking();
+                }
+            });
+        });
+        
+        // 保存API配置
+        document.getElementById('save-config').addEventListener('click', () => {
+            const apiKey = document.getElementById('api-key').value.trim();
+            const databaseId = document.getElementById('database-id').value.trim();
+            
+            if (!apiKey || !databaseId) {
+                alert('请填写完整的API配置信息');
+                return;
+            }
+            
+            // 保存到本地存储
+            localStorage.setItem('notionApiKey', apiKey);
+            localStorage.setItem('notionDatabaseId', databaseId);
+            
+            alert('配置已保存！请切换到其他标签页使用功能');
+        });
+        
+        // 加载保存的配置
+        function loadConfig() {
+            const apiKey = localStorage.getItem('notionApiKey');
+            const databaseId = localStorage.getItem('notionDatabaseId');
+            
+            if (apiKey) {
+                document.getElementById('api-key').value = apiKey;
+            }
+            
+            if (databaseId) {
+                document.getElementById('database-id').value = databaseId;
+            }
+        }
+        
+        // 选手查询功能
+        document.getElementById('search-player').addEventListener('click', () => {
+            const playerId = document.getElementById('player-id').value.trim();
+            if (!playerId) {
+                alert('请输入选手ID');
+                return;
+            }
+            
+            // 显示加载动画
+            document.getElementById('player-loader').style.display = 'block';
+            document.getElementById('player-detail').style.display = 'none';
+            
+            // 获取API配置
+            const apiKey = localStorage.getItem('notionApiKey');
+            const databaseId = localStorage.getItem('notionDatabaseId');
+            
+            if (!apiKey || !databaseId) {
+                alert('请先配置Notion API信息');
+                document.getElementById('player-loader').style.display = 'none';
+                document.querySelector('.tab-btn[data-tab="config"]').click();
+                return;
+            }
+            
+            // 实际API调用代码
+            fetchPlayerData(playerId, apiKey, databaseId);
+        });
+        
+        // 实际从Notion获取选手数据的函数
+        function fetchPlayerData(playerId, apiKey, databaseId) {
+            // 这里应该是实际的API调用代码
+            // 示例结构：
+            /*
+            fetch('https://api.notion.com/v1/databases/' + databaseId + '/query', {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Bearer ' + apiKey,
+                    'Notion-Version': '2022-06-28',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    filter: {
+                        property: "ID",
+                        rich_text: {
+                            equals: playerId
+                        }
+                    }
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                // 处理数据
+                const player = processPlayerData(data);
+                displayPlayerData(player);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('查询失败，请检查配置和网络');
+            })
+            .finally(() => {
+                document.getElementById('player-loader').style.display = 'none';
+            });
+            */
+            
+            // 由于没有实际API，这里模拟一个延迟
+            setTimeout(() => {
+                document.getElementById('player-loader').style.display = 'none';
+                alert('实际环境中，这里会调用Notion API获取数据。\n\n请配置您的API信息后实现此功能。');
+            }, 1500);
+        }
+        
+        // 加载队伍排名
+        function loadTeamRanking() {
+            // 显示加载动画
+            document.getElementById('team-loader').style.display = 'block';
+            document.querySelector('#team-ranking tbody').innerHTML = '';
+            
+            // 获取API配置
+            const apiKey = localStorage.getItem('notionApiKey');
+            const databaseId = localStorage.getItem('notionDatabaseId');
+            
+            if (!apiKey || !databaseId) {
+                document.getElementById('team-loader').style.display = 'none';
+                alert('请先配置Notion API信息');
+                document.querySelector('.tab-btn[data-tab="config"]').click();
+                return;
+            }
+            
+            // 实际API调用代码
+            fetchTeamRanking(apiKey, databaseId);
+        }
+        
+        // 实际从Notion获取队伍排名的函数
+        function fetchTeamRanking(apiKey, databaseId) {
+            // 这里应该是实际的API调用代码
+            // 示例结构：
+            /*
+            fetch('https://api.notion.com/v1/databases/' + databaseId + '/query', {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Bearer ' + apiKey,
+                    'Notion-Version': '2022-06-28',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    sorts: [{
+                        property: "TotalScore",
+                        direction: "descending"
+                    }]
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                const teams = processTeamData(data);
+                displayTeamRanking(teams);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('加载队伍排名失败');
+            })
+            .finally(() => {
+                document.getElementById('team-loader').style.display = 'none';
+            });
+            */
+            
+            // 由于没有实际API，这里模拟一个延迟
+            setTimeout(() => {
+                document.getElementById('team-loader').style.display = 'none';
+                alert('实际环境中，这里会调用Notion API获取队伍排名数据。\n\n请配置您的API信息后实现此功能。');
+            }, 2000);
+        }
+        
+        // 显示选手数据
+        function displayPlayerData(player) {
+            document.getElementById('player-avatar').textContent = player.name.substr(0, 2);
+            document.getElementById('player-name').textContent = player.name;
+            document.getElementById('player-id-display').textContent = player.id;
+            document.getElementById('player-team').textContent = player.team;
+            document.getElementById('total-score').textContent = player.totalScore;
+            document.getElementById('matches-played').textContent = player.matches;
+            document.getElementById('win-rate').textContent = `${player.winRate}%`;
+            document.getElementById('avg-score').textContent = player.avgScore.toFixed(1);
+            
+            // 填充表现数据
+            const tbody = document.getElementById('performance-data');
+            tbody.innerHTML = '';
+            
+            player.performance.forEach(perf => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${perf.event}</td>
+                    <td>${perf.score}</td>
+                    <td>${perf.rank}</td>
+                    <td>${perf.date}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+            
+            document.getElementById('player-detail').style.display = 'block';
+        }
+        
+        // 显示队伍排名
+        function displayTeamRanking(teams) {
+            const tbody = document.querySelector('#team-ranking tbody');
+            tbody.innerHTML = '';
+            
+            teams.forEach((team, index) => {
+                const tr = document.createElement('tr');
+                
+                let rankBadge = '';
+                if (index === 0) rankBadge = '<span class="medal gold">🥇</span>';
+                else if (index === 1) rankBadge = '<span class="medal silver">🥈</span>';
+                else if (index === 2) rankBadge = '<span class="medal bronze">🥉</span>';
+                
+                tr.innerHTML = `
+                    <td>${rankBadge} ${index + 1}</td>
+                    <td><div class="team-logo">${team.name.substr(0,2)}</div> ${team.name}</td>
+                    <td>${team.totalScore}</td>
+                    <td>${team.matches}</td>
+                    <td>${team.avgScore.toFixed(1)}</td>
+                    <td>${team.winRate}%</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+        
+        // 初始化页面
+        document.addEventListener('DOMContentLoaded', () => {
+            // 加载保存的配置
+            loadConfig();
+            
+            // 默认显示队伍排名数据
+            // 实际使用中取消注释下面这行
+            // loadTeamRanking();
+        });
+    </script>
+</body>
+</html>
