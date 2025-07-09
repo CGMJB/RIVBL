@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>赛事数据榜单系统 - IVBL特供</title>
+    <title>赛事数据榜单系统 - Vercel部署版</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
@@ -389,6 +389,20 @@
             margin: 2px 0;
         }
         
+        .vercel-badge {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            z-index: 100;
+        }
+        
         @media (max-width: 768px) {
             .search-container {
                 flex-direction: column;
@@ -406,6 +420,13 @@
             h1 {
                 font-size: 2.2rem;
             }
+            
+            .vercel-badge {
+                bottom: 10px;
+                left: 10px;
+                right: 10px;
+                justify-content: center;
+            }
         }
     </style>
 </head>
@@ -416,8 +437,8 @@
                 <i class="fas fa-trophy"></i>
                 <span>赛事数据榜单系统</span>
             </div>
-            <h1>IVBL特供</h1>
-            <p class="subtitle">可展示选手数据和队伍排名</p>
+            <h1>Vercel部署版</h1>
+            <p class="subtitle">连接Notion数据库，展示选手数据和队伍排名</p>
         </header>
         
         <div class="tabs">
@@ -528,11 +549,14 @@
         </div>
         
         <div class="config-hint">
-           
+            <p><i class="fas fa-info-circle"></i> <strong>部署说明：</strong> 此版本已针对Vercel部署优化，配置通过环境变量完成。</p>
+            <p><code>NOTION_API_KEY</code> - Notion API密钥</p>
+            <p><code>PLAYER_DB_ID</code> - 选手数据库ID</p>
+            <p><code>TEAM_DB_ID</code> - 队伍数据库ID</p>
         </div>
         
         <div class="footer">
-            <p>数据来源: IVBL | 锐和TO提供技术支持版权所属| © 2025 赛事数据榜单系统</p>
+            <p>数据来源: Notion数据库 | Vercel托管 | © 2023 赛事数据榜单系统</p>
             <div class="notion-badge">
                 <i class="fas fa-database"></i>
                 <span>Powered by Notion API</span>
@@ -540,19 +564,19 @@
         </div>
     </div>
 
+    <div class="vercel-badge">
+        <i class="fas fa-cloud"></i>
+        <span>部署于 Vercel</span>
+    </div>
+
     <div class="notification" id="notification">
         <i class="fas fa-check-circle"></i> <span id="notification-text">操作成功完成</span>
     </div>
 
     <script>
-        // ===================================================================
-        // 配置区域 - 请修改以下变量以连接您的Notion数据库
-        // ===================================================================
-        const NOTION_API_KEY = "secret_ntn_6452153753858VLROFsS4XVRsD4zbZ9ZERDCmSrVBJi2a4"; // 替换为您的Notion API密钥
-        const PLAYER_DB_ID = "22bf05c8880280afb387cdb7b7f2779322bf05c8880280238b32000c48f4173c"; // 替换为选手数据库ID
-        const TEAM_DB_ID = "22bf05c88802803b8246e1aa6161cf4e22bf05c88802805ea674000c3a01bc53"; // 替换为队伍数据库ID
-        const NOTION_VERSION = "2025-07-09"; // Notion API版本
-        // ===================================================================
+        // =============================================================
+        // 前端JavaScript代码
+        // =============================================================
         
         // 切换标签页功能
         document.querySelectorAll('.tab-btn').forEach(button => {
@@ -597,42 +621,35 @@
             document.getElementById('player-loader').style.display = 'block';
             document.getElementById('player-detail').style.display = 'none';
             
-            // 检查API配置
-            if (NOTION_API_KEY.includes("YOUR_") || PLAYER_DB_ID.includes("YOUR_")) {
-                document.getElementById('player-loader').style.display = 'none';
-                showNotification('请配置Notion API信息', true);
-                return;
-            }
-            
             // 调用API查询选手
             fetchPlayerData(playerId);
         });
         
-        // 从Notion获取选手数据
-        function fetchPlayerData(playerId) {
-            fetch(`https://api.notion.com/v1/databases/${PLAYER_DB_ID}/query`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${NOTION_API_KEY}`,
-                    'Notion-Version': NOTION_VERSION,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    filter: {
-                        property: "ID",
-                        rich_text: {
-                            equals: playerId
+        // 从代理API获取选手数据
+        async function fetchPlayerData(playerId) {
+            try {
+                const response = await fetch('/api/notion', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        type: 'player',
+                        filter: {
+                            property: "ID",
+                            rich_text: {
+                                equals: playerId
+                            }
                         }
-                    }
-                })
-            })
-            .then(response => {
+                    })
+                });
+                
                 if (!response.ok) {
                     throw new Error('API请求失败: ' + response.status);
                 }
-                return response.json();
-            })
-            .then(data => {
+                
+                const data = await response.json();
+                
                 if (data.results.length === 0) {
                     throw new Error('未找到该选手');
                 }
@@ -640,14 +657,12 @@
                 const player = processPlayerData(data.results[0]);
                 displayPlayerData(player);
                 showNotification(`成功加载 ${player.name} 的数据`);
-            })
-            .catch(error => {
+            } catch (error) {
                 console.error('Error:', error);
                 showNotification(error.message || '查询失败', true);
-            })
-            .finally(() => {
+            } finally {
                 document.getElementById('player-loader').style.display = 'none';
-            });
+            }
         }
         
         // 处理选手数据
@@ -672,51 +687,41 @@
             document.getElementById('team-loader').style.display = 'block';
             document.querySelector('#team-ranking tbody').innerHTML = '';
             
-            // 检查API配置
-            if (NOTION_API_KEY.includes("YOUR_") || TEAM_DB_ID.includes("YOUR_")) {
-                document.getElementById('team-loader').style.display = 'none';
-                showNotification('请配置Notion API信息', true);
-                return;
-            }
-            
             // 调用API获取队伍排名
             fetchTeamRanking();
         }
         
-        // 从Notion获取队伍排名
-        function fetchTeamRanking() {
-            fetch(`https://api.notion.com/v1/databases/${TEAM_DB_ID}/query`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${NOTION_API_KEY}`,
-                    'Notion-Version': NOTION_VERSION,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    sorts: [{
-                        property: "TotalScore",
-                        direction: "descending"
-                    }]
-                })
-            })
-            .then(response => {
+        // 从代理API获取队伍排名
+        async function fetchTeamRanking() {
+            try {
+                const response = await fetch('/api/notion', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        type: 'team',
+                        sorts: [{
+                            property: "TotalScore",
+                            direction: "descending"
+                        }]
+                    })
+                });
+                
                 if (!response.ok) {
                     throw new Error('API请求失败: ' + response.status);
                 }
-                return response.json();
-            })
-            .then(data => {
+                
+                const data = await response.json();
                 const teams = data.results.map(processTeamData);
                 displayTeamRanking(teams);
                 showNotification(`成功加载 ${teams.length} 支队伍数据`);
-            })
-            .catch(error => {
+            } catch (error) {
                 console.error('Error:', error);
                 showNotification(error.message || '加载队伍排名失败', true);
-            })
-            .finally(() => {
+            } finally {
                 document.getElementById('team-loader').style.display = 'none';
-            });
+            }
         }
         
         // 处理队伍数据
@@ -743,7 +748,7 @@
             document.getElementById('win-rate').textContent = `${player.winRate}%`;
             document.getElementById('avg-score').textContent = player.avgScore.toFixed(1);
             
-            // 填充表现数据 - 实际实现需要获取关联数据
+            // 填充表现数据
             const tbody = document.getElementById('performance-data');
             tbody.innerHTML = `
                 <tr>
@@ -785,12 +790,77 @@
         document.addEventListener('DOMContentLoaded', () => {
             // 默认显示队伍排名数据
             loadTeamRanking();
-            
-            // 检查配置
-            if (NOTION_API_KEY.includes("YOUR_") || PLAYER_DB_ID.includes("YOUR_") || TEAM_DB_ID.includes("YOUR_")) {
-                showNotification('请配置Notion API信息', true);
-            }
         });
+    </script>
+    
+    <script>
+        // =============================================================
+        // 代理API实现（Vercel无服务器函数）
+        // =============================================================
+        
+        // 如果运行在Vercel环境，则创建API路由
+        if (typeof vercel !== 'undefined' || process.env.VERCEL) {
+            // 创建API路由
+            const express = require('express');
+            const fetch = require('node-fetch');
+            
+            const app = express();
+            app.use(express.json());
+            
+            // API路由处理
+            app.post('/api/notion', async (req, res) => {
+                try {
+                    // 从环境变量获取配置
+                    const NOTION_API_KEY = process.env.NOTION_API_KEY;
+                    const PLAYER_DB_ID = process.env.PLAYER_DB_ID;
+                    const TEAM_DB_ID = process.env.TEAM_DB_ID;
+                    const NOTION_VERSION = '2022-06-28';
+                    
+                    const { type, ...body } = req.body;
+                    
+                    // 检查环境变量
+                    if (!NOTION_API_KEY || !PLAYER_DB_ID || !TEAM_DB_ID) {
+                        return res.status(500).json({ 
+                            error: '服务器配置错误：缺少必要的环境变量' 
+                        });
+                    }
+                    
+                    // 根据请求类型选择数据库
+                    const databaseId = type === 'player' ? PLAYER_DB_ID : TEAM_DB_ID;
+                    
+                    // 调用Notion API
+                    const notionResponse = await fetch(`https://api.notion.com/v1/databases/${databaseId}/query`, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${NOTION_API_KEY}`,
+                            'Notion-Version': NOTION_VERSION,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(body)
+                    });
+                    
+                    if (!notionResponse.ok) {
+                        const errorText = await notionResponse.text();
+                        return res.status(notionResponse.status).json({ 
+                            error: `Notion API错误: ${notionResponse.statusText}`,
+                            details: errorText
+                        });
+                    }
+                    
+                    const data = await notionResponse.json();
+                    res.status(200).json(data);
+                } catch (error) {
+                    console.error('代理服务器错误:', error);
+                    res.status(500).json({ 
+                        error: '内部服务器错误',
+                        details: error.message 
+                    });
+                }
+            });
+            
+            // 导出为Vercel函数
+            module.exports = app;
+        }
     </script>
 </body>
 </html>
