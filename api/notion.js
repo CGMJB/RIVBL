@@ -1,11 +1,11 @@
-// api/notion.js
-const express = require('express');
-const fetch = require('node-fetch');
+// 使用ESM模块语法
+import fetch from 'node-fetch';
+import express from 'express';
 
 const app = express();
 app.use(express.json());
 
-app.post('/notion', async (req, res) => {
+app.post('/', async (req, res) => {
   try {
     // 从环境变量获取配置
     const NOTION_API_KEY = process.env.NOTION_API_KEY;
@@ -55,4 +55,4 @@ app.post('/notion', async (req, res) => {
   }
 });
 
-module.exports = app;
+export default app;
